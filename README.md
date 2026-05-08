@@ -1,0 +1,1 @@
+Por enquanto pedi para o claude um html mto bolado (templates/index.html). Além disso implementei funções basicas na mão (server/main_serve.py). A ideia agr eh refinar esse codigo cumprindo os requisitos do professor e após isso modularizar as coisas e integrar ao html que o claude deu.

@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusChat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       RESET & VARIÁVEIS GLOBAIS
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:      #0a0d12;
+      --bg-panel:     #111620;
+      --bg-card:      #161d2a;
+      --bg-input:     #1a2235;
+      --bg-hover:     #1e2840;
+      --accent:       #4af0b4;
+      --accent-dim:   #1d7a5a;
+      --accent-glow:  rgba(74, 240, 180, 0.12);
+      --red:          #f06060;
+      --amber:        #f0a040;
+      --blue:         #4090f0;
+      --text-primary: #e8eef8;
+      --text-sec:     #7a8aaa;
+      --text-muted:   #3a4a60;
+      --border:       #1e2c44;
+      --border-acc:   rgba(74, 240, 180, 0.3);
+      --radius-sm:    6px;
+      --radius-md:    10px;
+      --radius-lg:    16px;
+      --font-display: 'Syne', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       UTILITÁRIOS
+    ============================================================ */
+    .hidden { display: none !important; }
+    .flex    { display: flex; }
+    .col     { flex-direction: column; }
+    .gap-4   { gap: 4px; }
+    .gap-8   { gap: 8px; }
+    .gap-12  { gap: 12px; }
+    .gap-16  { gap: 16px; }
+    .gap-24  { gap: 24px; }
+    .center  { align-items: center; justify-content: center; }
+
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+    /* ============================================================
+       ANIMAÇÕES
+    ============================================================ */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-accent {
+      0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+      50%       { box-shadow: 0 0 0 8px var(--accent-glow); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes dot-pulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40%            { transform: scale(1); opacity: 1; }
+    }
+
+    /* ============================================================
+       COMPONENTES COMUNS
+    ============================================================ */
+
+    /* Logo / wordmark */
+    .logo {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+    .logo span { color: var(--accent); }
+
+    .tagline {
+      font-size: 12px;
+      color: var(--text-sec);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Inputs */
+    input[type="text"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    textarea:focus {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    input::placeholder { color: var(--text-muted); }
+
+    label {
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-sec);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* Botão primário */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0d12;
+    }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); filter: brightness(0.95); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-sec);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--border-acc); color: var(--accent); background: var(--accent-glow); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid rgba(240,96,96,0.3);
+    }
+    .btn-danger:hover { background: rgba(240,96,96,0.1); }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .badge-online  { background: rgba(74,240,180,0.12); color: var(--accent); }
+    .badge-offline { background: rgba(90,100,120,0.2);  color: var(--text-sec); }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .dot.live { animation: pulse-accent 2s infinite; }
+
+    /* Mensagem de erro */
+    .error-msg {
+      font-size: 12px;
+      color: var(--red);
+      padding: 8px 12px;
+      background: rgba(240,96,96,0.08);
+      border: 1px solid rgba(240,96,96,0.2);
+      border-radius: var(--radius-sm);
+      animation: fadeInUp 0.2s;
+    }
+
+    /* Cursor piscante estilo terminal */
+    .cursor::after {
+      content: '▋';
+      color: var(--accent);
+      animation: blink 1.1s step-end infinite;
+      margin-left: 2px;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--bg-hover);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* ============================================================
+       LAYOUT PRINCIPAL (container de telas)
+    ============================================================ */
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ============================================================
+       TELA 1 — LOGIN
+    ============================================================ */
+    #screen-login {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Grade decorativa de fundo */
+    #screen-login::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    /* Gradiente de vinheta */
+    #screen-login::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 30%, var(--bg-base) 80%);
+      pointer-events: none;
+    }
+
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 420px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .login-header .tagline {
+      margin-top: 6px;
+    }
+
+    .login-form { display: flex; flex-direction: column; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; }
+
+    .login-footer {
+      margin-top: 28px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Tab login/registro */
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-sec);
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .auth-tab.active {
+      background: var(--bg-card);
+      color: var(--accent);
+      border: 1px solid var(--border-acc);
+    }
+
+    /* ============================================================
+       TELA 2 — LOBBY (seleção de salas)
+    ============================================================ */
+    #screen-lobby {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .topbar-left  { display: flex; align-items: center; gap: 16px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Conteúdo do lobby */
+    .lobby-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 28px;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .lobby-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .lobby-subtitle {
+      font-size: 13px;
+      color: var(--text-sec);
+      margin-bottom: 28px;
+    }
+
+    /* Seção criar sala */
+    .create-room-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 32px;
+      align-items: flex-end;
+    }
+    .create-room-bar .form-group { flex: 1; margin-bottom: 0; }
+
+    /* Grid de salas */
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    /* Card de sala */
+    .room-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.18s;
+      animation: fadeInUp 0.3s ease both;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .room-card:hover {
+      border-color: var(--border-acc);
+      background: var(--bg-hover);
+      transform: translateY(-2px);
+    }
+
+    .room-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .room-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-glow);
+      border: 1px solid var(--border-acc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .room-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+    .room-desc {
+      font-size: 12px;
+      color: var(--text-sec);
+      line-height: 1.5;
+    }
+    .room-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .room-members {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Sala sem usuários */
+    .room-empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* ============================================================
+       TELA 3 — CHAT
+    ============================================================ */
+    #screen-chat {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header do chat */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-back {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-sec);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+    .btn-back:hover { border-color: var(--border-acc); color: var(--accent); }
+
+    .chat-room-info { display: flex; flex-direction: column; }
+    .chat-room-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .chat-room-status { font-size: 11px; color: var(--text-sec); }
+
+    .chat-header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* Layout principal do chat */
+    .chat-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Coluna lateral — membros */
+    .sidebar {
+      width: 220px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-title {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 16px 16px 8px;
+    }
+    .member-list { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
+    .member-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-sec);
+      animation: slideIn 0.2s ease;
+    }
+    .member-item .user-avatar { width: 22px; height: 22px; font-size: 10px; flex-shrink: 0; }
+    .member-item.me { color: var(--accent); }
+    .member-item.me .user-avatar { background: rgba(74,240,180,0.25); }
+
+    /* Área de mensagens */
+    .messages-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .messages-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* Mensagem individual */
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 78%;
+      animation: fadeInUp 0.2s ease;
+    }
+    .msg.mine {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .msg.other {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    /* Agrupa mensagens do mesmo remetente */
+    .msg + .msg.mine  { margin-top: 2px; }
+    .msg + .msg.other { margin-top: 2px; }
+    .msg-group-start  { margin-top: 12px !important; }
+
+    .msg-sender {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+      padding: 0 4px;
+    }
+    .msg-sender .name { color: var(--accent); font-weight: 500; }
+    .msg-sender .time { margin-left: 8px; }
+
+    .msg-bubble {
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .msg.mine .msg-bubble {
+      background: var(--accent-dim);
+      color: #d0fff0;
+      border-bottom-right-radius: 3px;
+    }
+    .msg.other .msg-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-bottom-left-radius: 3px;
+    }
+
+    /* Mensagem de sistema */
+    .msg-system {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 8px 0;
+      margin: 6px 0;
+    }
+    .msg-system span {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 3px 12px;
+      border-radius: 20px;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 20px 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      min-height: 28px;
+    }
+    .typing-dots {
+      display: flex;
+      gap: 3px;
+    }
+    .typing-dots span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      display: block;
+    }
+    .typing-dots span:nth-child(1) { animation: dot-pulse 1.2s infinite 0.0s; }
+    .typing-dots span:nth-child(2) { animation: dot-pulse 1.2s infinite 0.2s; }
+    .typing-dots span:nth-child(3) { animation: dot-pulse 1.2s infinite 0.4s; }
+
+    /* Barra de input */
+    .input-bar {
+      padding: 14px 20px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-wrap {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    #msg-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 11px 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-primary);
+      resize: none;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    #msg-input::placeholder { color: var(--text-muted); }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0a0d12;
+      font-size: 18px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ============================================================
+       OVERLAY / MODAL (criar sala)
+    ============================================================ */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,13,18,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      width: 380px;
+      animation: fadeInUp 0.25s ease;
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .modal-form { display: flex; flex-direction: column; gap: 16px; }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    /* Emojis para ícone de sala */
+    .emoji-picker {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .emoji-opt {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .emoji-opt:hover, .emoji-opt.selected {
+      border-color: var(--border-acc);
+      background: var(--accent-glow);
+    }
+
+    /* Status de conexão */
+    .conn-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+    .conn-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+    .conn-dot.ok      { background: var(--accent); animation: pulse-accent 2s infinite; }
+    .conn-dot.warning { background: var(--amber); }
+    .conn-dot.error   { background: var(--red); }
+
+    /* Toast de notificação */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 10px 16px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-primary);
+      animation: fadeInUp 0.25s ease;
+      max-width: 300px;
+    }
+    .toast.success { border-color: var(--accent-dim); color: var(--accent); }
+    .toast.error   { border-color: rgba(240,96,96,0.4); color: var(--red); }
+
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- =========================================================
+       TELA 1: LOGIN / REGISTRO
+  ========================================================= -->
+  <div id="screen-login">
+    <div class="login-card">
+
+      <div class="login-header">
+        <div class="logo">Nexus<span>Chat</span></div>
+        <div class="tagline">Comunicação em tempo real</div>
+      </div>
+
+      <!-- Abas Login / Registrar -->
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
+        <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Registrar</div>
+      </div>
+
+      <!-- Formulário de Login -->
+      <div id="form-login" class="login-form">
+        <div class="form-group">
+          <label for="login-username">Usuário</label>
+          <input type="text" id="login-username" placeholder="seu_nick" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <div id="login-error" class="error-msg hidden"></div>
+        <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">
+          <span id="login-spinner" class="spinner hidden"></span>
+          Entrar no sistema
+        </button>
+      </div>
+
+      <!-- Formulário de Registro -->
+      <div id="form-register" class="login-form hidden">
+        <div class="form-group">
+          <label for="reg-username">Escolha seu nome de usuário</label>
+          <input type="text" id="reg-username" placeholder="seu_nick" maxlength="20" />
+        </div>
+        <div class="form-group">
+          <label for="reg-display">Nome de exibição</label>
+          <input type="text" id="reg-display" placeholder="Seu Nome" maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Senha</label>
+          <input type="password" id="reg-password" placeholder="mínimo 6 caracteres" />
+        </div>
+        <div class="form-group">
+          <label for="reg-confirm">Confirmar senha</label>
+          <input type="password" id="reg-confirm" placeholder="repita a senha" />
+        </div>
+        <div id="reg-error" class="error-msg hidden"></div>
+        <button class="btn btn-primary" id="btn-register" onclick="handleRegister()">Criar conta</button>
+      </div>
+
+      <div class="login-footer">
+        <span class="cursor">Sistema criptografado e seguro</span>
+      </div>
+
+    </div>
+  </div><!-- /screen-login -->
+
+
+  <!-- =========================================================
+       TELA 2: LOBBY — seleção de salas
+  ========================================================= -->
+  <div id="screen-lobby" class="hidden">
+
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="logo" style="font-size:20px">Nexus<span>Chat</span></div>
+        <div class="conn-status">
+          <div class="conn-dot ok" id="lobby-conn-dot"></div>
+          <span id="lobby-conn-text">Conectado</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="user-chip">
+          <div class="user-avatar" id="lobby-avatar">?</div>
+          <span id="lobby-username">usuário</span>
+        </div>
+        <button class="btn btn-ghost" onclick="handleLogout()" style="padding:7px 14px;font-size:12px">
+          Sair
+        </button>
+      </div>
+    </div>
+
+    <div class="lobby-content">
+      <div class="lobby-title">Salas disponíveis</div>
+      <div class="lobby-subtitle">Selecione uma sala para entrar ou crie a sua própria</div>
+
+      <!-- Criar sala -->
+      <div class="create-room-bar">
+        <div class="form-group">
+          <label>Nova sala</label>
+          <input type="text" id="new-room-name" placeholder="Nome da sala..." maxlength="30"
+                 onkeydown="if(event.key==='Enter') createRoom()" />
+        </div>
+        <button class="btn btn-primary" onclick="openCreateModal()" style="margin-bottom:0">
+          + Criar sala
+        </button>
+      </div>
+
+      <!-- Lista de salas -->
+      <div class="rooms-grid" id="rooms-grid">
+        <!-- preenchido via JS -->
+      </div>
+    </div>
+
+  </div><!-- /screen-lobby -->
+
+
+  <!-- =========================================================
+       TELA 3: CHAT — sala ativa
+  ========================================================= -->
+  <div id="screen-chat" class="hidden">
+
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <button class="btn-back" onclick="leaveRoom()" title="Voltar ao lobby">←</button>
+        <div style="font-size:20px" id="chat-room-icon">💬</div>
+        <div class="chat-room-info">
+          <div class="chat-room-name" id="chat-room-name">Geral</div>
+          <div class="chat-room-status">
+            <span class="badge badge-online">
+              <span class="dot live"></span>
+              <span id="chat-member-count">0</span> online
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="chat-header-right">
+        <div class="conn-status">
+          <div class="conn-dot ok" id="chat-conn-dot"></div>
+          <span id="chat-conn-text">Ao vivo</span>
+        </div>
+        <div class="user-chip">
+          <div class="user-avatar" id="chat-avatar">?</div>
+          <span id="chat-username">user</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-body">
+
+      <!-- Sidebar: membros online -->
+      <div class="sidebar">
+        <div class="sidebar-title">Membros online</div>
+        <div class="member-list" id="member-list">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+
+      <!-- Área de mensagens -->
+      <div class="messages-area">
+        <div class="messages-list" id="messages-list">
+          <!-- mensagens aparecem aqui -->
+        </div>
+
+        <!-- Typing indicator -->
+        <div class="typing-indicator" id="typing-indicator">
+          <!-- preenchido via JS quando alguém digita -->
+        </div>
+
+        <!-- Input de mensagem -->
+        <div class="input-bar">
+          <div class="input-wrap">
+            <textarea
+              id="msg-input"
+              placeholder="Digite sua mensagem..."
+              rows="1"
+              onkeydown="handleMsgKey(event)"
+              oninput="autoResize(this); handleTyping()"
+            ></textarea>
+          </div>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Enviar (Enter)">
+            ➤
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /screen-chat -->
+
+</div><!-- /app -->
+
+
+<!-- Modal: Criar sala -->
+<div class="overlay hidden" id="modal-create-room">
+  <div class="modal">
+    <div class="modal-title">Criar nova sala</div>
+    <div class="modal-form">
+      <div class="form-group">
+        <label>Nome da sala</label>
+        <input type="text" id="modal-room-name" placeholder="ex: frontend-devs" maxlength="30" />
+      </div>
+      <div class="form-group">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="modal-room-desc" placeholder="Sobre o que é essa sala?" maxlength="80" />
+      </div>
+      <div class="form-group">
+        <label>Ícone</label>
+        <div class="emoji-picker" id="emoji-picker">
+          <!-- gerado via JS -->
+        </div>
+      </div>
+      <div id="create-room-error" class="error-msg hidden"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitCreateRoom()">Criar sala</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+
+<!-- ============================================================
+     JAVASCRIPT PRINCIPAL
+     Lógica de UI, gerenciamento de estado e integração WebSocket
+============================================================ -->
+<script>
+/* ============================================================
+   ESTADO DA APLICAÇÃO
+============================================================ */
+const APP = {
+  // Usuário autenticado
+  user: null,              // { username, displayName }
+
+  // Sala atual
+  currentRoom: null,       // { id, name, icon, desc }
+
+  // Conexão WebSocket
+  ws: null,
+  connected: false,
+  reconnectTimer: null,
+  reconnectAttempts: 0,
+
+  // Estado do chat
+  messages: {},            // roomId -> [{id, sender, text, ts, system}]
+  members: {},             // roomId -> Set de usernames
+  typingUsers: {},         // roomId -> Set de usernames
+  typingTimer: null,
+
+  // Último emissor de mensagem (para agrupamento visual)
+  lastSender: null,
+
+  // Salas disponíveis
+  rooms: [],
+};
+
+/* ============================================================
+   BANCO DE USUÁRIOS SIMULADO (localStorage)
+   Em produção: substituir por chamadas à API REST + JWT
+============================================================ */
+function getUsers() {
+  return JSON.parse(localStorage.getItem('nx_users') || '{}');
+}
+function saveUser(username, data) {
+  const users = getUsers();
+  users[username] = data;
+  localStorage.setItem('nx_users', JSON.stringify(users));
+}
+function getSession() {
+  return JSON.parse(localStorage.getItem('nx_session') || 'null');
+}
+function saveSession(user) {
+  localStorage.setItem('nx_session', JSON.stringify(user));
+}
+function clearSession() {
+  localStorage.removeItem('nx_session');
+}
+
+/* ============================================================
+   SALAS PADRÃO
+============================================================ */
+const DEFAULT_ROOMS = [
+  { id: 'geral',      name: 'Geral',      icon: '💬', desc: 'Conversa geral para todos os membros', members: 0 },
+  { id: 'tech',       name: 'Tech Talk',  icon: '💻', desc: 'Desenvolvimento, código e tecnologia',  members: 0 },
+  { id: 'random',     name: 'Aleatório',  icon: '🎲', desc: 'Tópicos variados e off-topic',         members: 0 },
+  { id: 'projetos',   name: 'Projetos',   icon: '🚀', desc: 'Discussão de projetos e tarefas',      members: 0 },
+  { id: 'anuncios',   name: 'Anúncios',   icon: '📢', desc: 'Comunicados e novidades importantes',  members: 0 },
+];
+
+function loadRooms() {
+  const stored = localStorage.getItem('nx_rooms');
+  if (stored) {
+    APP.rooms = JSON.parse(stored);
+  } else {
+    APP.rooms = [...DEFAULT_ROOMS];
+    localStorage.setItem('nx_rooms', JSON.stringify(APP.rooms));
+  }
+}
+function saveRooms() {
+  localStorage.setItem('nx_rooms', JSON.stringify(APP.rooms));
+}
+
+/* ============================================================
+   NAVEGAÇÃO ENTRE TELAS
+============================================================ */
+function showScreen(name) {
+  ['login', 'lobby', 'chat'].forEach(s => {
+    document.getElementById('screen-' + s).classList.add('hidden');
+  });
+  document.getElementById('screen-' + name).classList.remove('hidden');
+}
+
+/* ============================================================
+   AUTENTICAÇÃO
+============================================================ */
+function switchTab(tab) {
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+
+function handleLogin() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  const spinner  = document.getElementById('login-spinner');
+
+  errEl.classList.add('hidden');
+
+  if (!username || !password) {
+    showError(errEl, 'Preencha usuário e senha.');
+    return;
+  }
+
+  spinner.classList.remove('hidden');
+
+  // Simula latência de rede
+  setTimeout(() => {
+    spinner.classList.add('hidden');
+    const users = getUsers();
+
+    if (!users[username]) {
+      showError(errEl, 'Usuário não encontrado. Crie uma conta primeiro.');
+      return;
+    }
+    if (users[username].password !== btoa(password)) {
+      showError(errEl, 'Senha incorreta.');
+      return;
+    }
+
+    const user = { username, displayName: users[username].displayName };
+    APP.user = user;
+    saveSession(user);
+    enterLobby();
+  }, 600);
+}
+
+function handleRegister() {
+  const username    = document.getElementById('reg-username').value.trim().toLowerCase();
+  const displayName = document.getElementById('reg-display').value.trim();
+  const password    = document.getElementById('reg-password').value;
+  const confirm     = document.getElementById('reg-confirm').value;
+  const errEl       = document.getElementById('reg-error');
+
+  errEl.classList.add('hidden');
+
+  if (!username || !displayName || !password) {
+    showError(errEl, 'Todos os campos são obrigatórios.'); return;
+  }
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    showError(errEl, 'Usuário: apenas letras, números e _.'); return;
+  }
+  if (username.length < 3) {
+    showError(errEl, 'Usuário deve ter ao menos 3 caracteres.'); return;
+  }
+  if (password.length < 6) {
+    showError(errEl, 'Senha deve ter ao menos 6 caracteres.'); return;
+  }
+  if (password !== confirm) {
+    showError(errEl, 'As senhas não coincidem.'); return;
+  }
+
+  const users = getUsers();
+  if (users[username]) {
+    showError(errEl, 'Este nome de usuário já está em uso.'); return;
+  }
+
+  saveUser(username, { password: btoa(password), displayName });
+  showToast('Conta criada com sucesso! Faça login.', 'success');
+  switchTab('login');
+  document.getElementById('login-username').value = username;
+}
+
+function handleLogout() {
+  if (APP.ws) {
+    APP.ws.close();
+    APP.ws = null;
+  }
+  APP.user = null;
+  clearSession();
+  showScreen('login');
+}
+
+/* ============================================================
+   LOBBY
+============================================================ */
+function enterLobby() {
+  loadRooms();
+
+  // Atualiza UI do topbar
+  document.getElementById('lobby-username').textContent = APP.user.displayName || APP.user.username;
+  document.getElementById('lobby-avatar').textContent   = getInitials(APP.user.displayName || APP.user.username);
+
+  renderRooms();
+  showScreen('lobby');
+  connectWebSocket();
+}
+
+function renderRooms() {
+  const grid = document.getElementById('rooms-grid');
+  grid.innerHTML = '';
+
+  if (!APP.rooms.length) {
+    grid.innerHTML = '<div class="room-empty-state">Nenhuma sala disponível. Crie a primeira!</div>';
+    return;
+  }
+
+  APP.rooms.forEach((room, i) => {
+    const card = document.createElement('div');
+    card.className = 'room-card';
+    card.style.animationDelay = (i * 0.06) + 's';
+    card.innerHTML = `
+      <div class="room-card-header">
+        <div class="room-icon">${room.icon}</div>
+        <div style="flex:1">
+          <div class="room-name">${escHtml(room.name)}</div>
+        </div>
+        <span class="badge badge-online">
+          <span class="dot"></span>${room.members || 0}
+        </span>
+      </div>
+      <div class="room-desc">${escHtml(room.desc || 'Sala de bate-papo')}</div>
+      <div class="room-meta">
+        <span># ${room.id}</span>
+        <span style="color:var(--accent);font-size:12px">Entrar →</span>
+      </div>
+    `;
+    card.onclick = () => joinRoom(room);
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================================
+   MODAL CRIAR SALA
+============================================================ */
+const EMOJI_OPTIONS = ['💬','💻','🎮','🎲','🚀','📢','🎯','🔬','📚','🎵','🎨','🏆','🌍','⚡','🔥'];
+let selectedEmoji = EMOJI_OPTIONS[0];
+
+function openCreateModal() {
+  selectedEmoji = EMOJI_OPTIONS[0];
+  document.getElementById('modal-room-name').value = '';
+  document.getElementById('modal-room-desc').value = '';
+  document.getElementById('create-room-error').classList.add('hidden');
+
+  const picker = document.getElementById('emoji-picker');
+  picker.innerHTML = '';
+  EMOJI_OPTIONS.forEach(e => {
+    const opt = document.createElement('div');
+    opt.className = 'emoji-opt' + (e === selectedEmoji ? ' selected' : '');
+    opt.textContent = e;
+    opt.onclick = () => {
+      selectedEmoji = e;
+      picker.querySelectorAll('.emoji-opt').forEach(el => el.classList.remove('selected'));
+      opt.classList.add('selected');
+    };
+    picker.appendChild(opt);
+  });
+
+  document.getElementById('modal-create-room').classList.remove('hidden');
+  setTimeout(() => document.getElementById('modal-room-name').focus(), 100);
+}
+
+function closeCreateModal() {
+  document.getElementById('modal-create-room').classList.add('hidden');
+}
+
+function submitCreateRoom() {
+  const name = document.getElementById('modal-room-name').value.trim();
+  const desc = document.getElementById('modal-room-desc').value.trim();
+  const errEl = document.getElementById('create-room-error');
+  errEl.classList.add('hidden');
+
+  if (!name) { showError(errEl, 'Dê um nome para a sala.'); return; }
+  if (name.length < 2) { showError(errEl, 'Nome deve ter ao menos 2 caracteres.'); return; }
+
+  const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (APP.rooms.find(r => r.id === id)) {
+    showError(errEl, 'Já existe uma sala com esse nome.'); return;
+  }
+
+  const room = { id, name, icon: selectedEmoji, desc, members: 0 };
+  APP.rooms.push(room);
+  saveRooms();
+  renderRooms();
+  closeCreateModal();
+  showToast('Sala "' + name + '" criada!', 'success');
+
+  // Transmite via WS para outros clientes (se conectado)
+  wsSend({ type: 'room_created', room });
+}
+
+/* ============================================================
+   CHAT — ENTRAR / SAIR DE SALA
+============================================================ */
+function joinRoom(room) {
+  APP.currentRoom = room;
+  APP.lastSender  = null;
+
+  // Inicializa estruturas se necessário
+  if (!APP.messages[room.id])    APP.messages[room.id]    = [];
+  if (!APP.members[room.id])     APP.members[room.id]     = new Set();
+  if (!APP.typingUsers[room.id]) APP.typingUsers[room.id] = new Set();
+
+  // Atualiza header do chat
+  document.getElementById('chat-room-icon').textContent = room.icon;
+  document.getElementById('chat-room-name').textContent = room.name;
+  document.getElementById('chat-username').textContent  = APP.user.displayName || APP.user.username;
+  document.getElementById('chat-avatar').textContent    = getInitials(APP.user.displayName || APP.user.username);
+
+  // Renderiza histórico existente
+  renderMessages();
+  renderMembers();
+
+  showScreen('chat');
+
+  // Avisa o servidor
+  wsSend({ type: 'join_room', roomId: room.id, username: APP.user.username, displayName: APP.user.displayName || APP.user.username });
+
+  // Foca no input
+  setTimeout(() => document.getElementById('msg-input').focus(), 100);
+}
+
+function leaveRoom() {
+  if (APP.currentRoom) {
+    wsSend({ type: 'leave_room', roomId: APP.currentRoom.id, username: APP.user.username });
+    APP.currentRoom = null;
+  }
+  showScreen('lobby');
+  renderRooms();
+}
+
+/* ============================================================
+   ENVIO E RECEPÇÃO DE MENSAGENS
+============================================================ */
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text  = input.value.trim();
+  if (!text || !APP.currentRoom) return;
+
+  const msg = {
+    type: 'message',
+    id:   Date.now() + '-' + Math.random().toString(36).slice(2),
+    roomId:      APP.currentRoom.id,
+    sender:      APP.user.username,
+    displayName: APP.user.displayName || APP.user.username,
+    text,
+    ts: Date.now(),
+  };
+
+  // Exibe localmente de imediato
+  appendMessage(msg);
+
+  // Envia ao servidor
+  wsSend(msg);
+
+  input.value = '';
+  autoResize(input);
+
+  // Cancela indicador de digitação
+  clearTypingIndicator();
+}
+
+function handleMsgKey(e) {
+  // Enter envia; Shift+Enter quebra linha
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function handleTyping() {
+  if (!APP.currentRoom) return;
+  wsSend({ type: 'typing', roomId: APP.currentRoom.id, username: APP.user.username });
+
+  clearTimeout(APP.typingTimer);
+  APP.typingTimer = setTimeout(clearTypingIndicator, 2000);
+}
+
+function clearTypingIndicator() {
+  if (!APP.currentRoom) return;
+  wsSend({ type: 'stop_typing', roomId: APP.currentRoom.id, username: APP.user.username });
+}
+
+/* ============================================================
+   RENDERIZAÇÃO — MENSAGENS
+============================================================ */
+function appendMessage(msg) {
+  const roomId = APP.currentRoom?.id;
+  if (!roomId) return;
+
+  if (!APP.messages[roomId]) APP.messages[roomId] = [];
+  APP.messages[roomId].push(msg);
+  renderMessage(msg);
+}
+
+function renderMessages() {
+  const list = document.getElementById('messages-list');
+  list.innerHTML = '';
+  APP.lastSender = null;
+
+  const roomId = APP.currentRoom?.id;
+  if (!roomId || !APP.messages[roomId]) return;
+
+  APP.messages[roomId].forEach(m => renderMessage(m));
+}
+
+function renderMessage(msg) {
+  const list  = document.getElementById('messages-list');
+  const isMine = msg.sender === APP.user.username;
+
+  // Mensagem de sistema
+  if (msg.system) {
+    const el = document.createElement('div');
+    el.className = 'msg-system';
+    el.innerHTML = `<span>${escHtml(msg.text)}</span>`;
+    list.appendChild(el);
+    APP.lastSender = null;
+    scrollBottom();
+    return;
+  }
+
+  const isNewGroup = APP.lastSender !== msg.sender;
+  APP.lastSender   = msg.sender;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + (isMine ? 'mine' : 'other') + (isNewGroup ? ' msg-group-start' : '');
+
+  if (isNewGroup) {
+    const senderEl = document.createElement('div');
+    senderEl.className = 'msg-sender';
+    senderEl.innerHTML = `
+      <span class="name">${escHtml(msg.displayName || msg.sender)}</span>
+      <span class="time">${formatTime(msg.ts)}</span>
+    `;
+    wrap.appendChild(senderEl);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = msg.text;  // textContent evita XSS
+  wrap.appendChild(bubble);
+
+  list.appendChild(wrap);
+  scrollBottom();
+}
+
+/* ============================================================
+   RENDERIZAÇÃO — MEMBROS E TYPING
+============================================================ */
+function renderMembers() {
+  const list   = document.getElementById('member-list');
+  const countEl = document.getElementById('chat-member-count');
+  list.innerHTML = '';
+
+  const roomId  = APP.currentRoom?.id;
+  const members = roomId ? (APP.members[roomId] || new Set()) : new Set();
+
+  // Sempre inclui o próprio usuário
+  const allMembers = new Set([APP.user.username, ...members]);
+  countEl.textContent = allMembers.size;
+
+  allMembers.forEach(u => {
+    const item = document.createElement('div');
+    const isMe = u === APP.user.username;
+    item.className = 'member-item' + (isMe ? ' me' : '');
+
+    const users = getUsers();
+    const display = users[u]?.displayName || u;
+
+    item.innerHTML = `
+      <div class="user-avatar">${getInitials(display)}</div>
+      <span>${escHtml(display)}${isMe ? ' <span style="color:var(--text-muted);font-size:10px">(você)</span>' : ''}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function updateTypingIndicator() {
+  const el     = document.getElementById('typing-indicator');
+  const roomId = APP.currentRoom?.id;
+  const typing = roomId
+    ? [...(APP.typingUsers[roomId] || [])].filter(u => u !== APP.user.username)
+    : [];
+
+  if (!typing.length) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const names = typing.slice(0, 3).join(', ');
+  el.innerHTML = `
+    <div class="typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <span>${escHtml(names)} está digitando...</span>
+  `;
+}
+
+/* ============================================================
+   WEBSOCKET — CONEXÃO E PROTOCOLO
+============================================================ */
+
+/**
+ * Conecta ao servidor WebSocket principal.
+ * Em caso de falha, tenta servidor secundário (tolerância a falhas).
+ *
+ * Substitua as URLs pelos endereços reais após o deploy.
+ */
+const WS_PRIMARY   = 'wss://nexuschat-server.onrender.com/ws';   // servidor principal
+const WS_SECONDARY = 'wss://nexuschat-backup.onrender.com/ws';   // servidor secundário
+
+function connectWebSocket(useBackup = false) {
+  const url = useBackup ? WS_SECONDARY : WS_PRIMARY;
+
+  try {
+    APP.ws = new WebSocket(url);
+  } catch(e) {
+    // WebSocket não disponível — modo offline
+    setConnectionStatus('error');
+    return;
+  }
+
+  APP.ws.onopen = () => {
+    APP.connected = true;
+    APP.reconnectAttempts = 0;
+    setConnectionStatus('ok');
+
+    // Re-entra na sala se estava em uma
+    if (APP.currentRoom) {
+      wsSend({ type: 'join_room', roomId: APP.currentRoom.id, username: APP.user.username });
+    }
+    if (APP.user) {
+      wsSend({ type: 'auth', username: APP.user.username });
+    }
+  };
+
+  APP.ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      handleServerMessage(data);
+    } catch(e) {
+      console.error('[WS] Mensagem inválida:', event.data);
+    }
+  };
+
+  APP.ws.onclose = () => {
+    APP.connected = false;
+    setConnectionStatus('warning');
+
+    // Tenta reconectar com backoff exponencial
+    const delay = Math.min(1000 * Math.pow(2, APP.reconnectAttempts), 30000);
+    APP.reconnectAttempts++;
+
+    APP.reconnectTimer = setTimeout(() => {
+      // Após 3 falhas, tenta servidor secundário
+      const tryBackup = APP.reconnectAttempts >= 3;
+      if (tryBackup) showToast('Tentando servidor de backup...', 'error');
+      connectWebSocket(tryBackup);
+    }, delay);
+  };
+
+  APP.ws.onerror = () => {
+    setConnectionStatus('error');
+  };
+}
+
+/**
+ * Trata mensagens recebidas do servidor.
+ * O servidor centraliza toda a lógica de roteamento.
+ */
+function handleServerMessage(data) {
+  switch (data.type) {
+
+    case 'message':
+      // Apenas exibe se não for do próprio usuário (já renderizou local)
+      if (data.sender !== APP.user.username && data.roomId === APP.currentRoom?.id) {
+        appendMessage(data);
+      }
+      break;
+
+    case 'user_joined':
+      // Outro usuário entrou na sala
+      if (data.roomId === APP.currentRoom?.id && data.username !== APP.user.username) {
+        APP.members[data.roomId] = APP.members[data.roomId] || new Set();
+        APP.members[data.roomId].add(data.username);
+        appendMessage({ system: true, text: `${data.displayName} entrou na sala.`, ts: Date.now() });
+        renderMembers();
+      }
+      break;
+
+    case 'user_left':
+      if (data.roomId === APP.currentRoom?.id) {
+        APP.members[data.roomId]?.delete(data.username);
+        appendMessage({ system: true, text: `${data.displayName} saiu da sala.`, ts: Date.now() });
+        renderMembers();
+      }
+      break;
+
+    case 'typing':
+      if (data.roomId === APP.currentRoom?.id && data.username !== APP.user.username) {
+        APP.typingUsers[data.roomId] = APP.typingUsers[data.roomId] || new Set();
+        APP.typingUsers[data.roomId].add(data.username);
+        updateTypingIndicator();
+      }
+      break;
+
+    case 'stop_typing':
+      if (data.roomId === APP.currentRoom?.id) {
+        APP.typingUsers[data.roomId]?.delete(data.username);
+        updateTypingIndicator();
+      }
+      break;
+
+    case 'room_list':
+      // Servidor envia lista atualizada de salas
+      APP.rooms = data.rooms;
+      saveRooms();
+      renderRooms();
+      break;
+
+    case 'room_created':
+      if (!APP.rooms.find(r => r.id === data.room.id)) {
+        APP.rooms.push(data.room);
+        saveRooms();
+        renderRooms();
+      }
+      break;
+
+    case 'member_count':
+      // Atualiza contagem de membros por sala
+      if (data.roomId === APP.currentRoom?.id) {
+        document.getElementById('chat-member-count').textContent = data.count;
+      }
+      break;
+
+    case 'history':
+      // Histórico de mensagens ao entrar na sala
+      if (data.roomId === APP.currentRoom?.id) {
+        APP.messages[data.roomId] = data.messages;
+        renderMessages();
+      }
+      break;
+
+    case 'error':
+      showToast(data.message || 'Erro do servidor.', 'error');
+      break;
+
+    default:
+      console.log('[WS] Evento desconhecido:', data.type);
+  }
+}
+
+/** Envia um objeto JSON pelo WebSocket (se conectado) */
+function wsSend(obj) {
+  if (APP.ws && APP.ws.readyState === WebSocket.OPEN) {
+    APP.ws.send(JSON.stringify(obj));
+  }
+}
+
+/** Atualiza os indicadores visuais de status de conexão */
+function setConnectionStatus(state) {
+  const dots  = document.querySelectorAll('.conn-dot');
+  const texts = ['lobby-conn-text', 'chat-conn-text'];
+  const labels = { ok: 'Conectado', warning: 'Reconectando...', error: 'Sem conexão' };
+
+  dots.forEach(d => {
+    d.className = 'conn-dot ' + state;
+  });
+  texts.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = labels[state] || state;
+  });
+}
+
+/* ============================================================
+   UTILITÁRIOS
+============================================================ */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function getInitials(name) {
+  return (name || '?')
+    .split(/\s+/)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+
+function scrollBottom() {
+  const list = document.getElementById('messages-list');
+  if (list) list.scrollTop = list.scrollHeight;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function showError(el, msg) {
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+/* ============================================================
+   INICIALIZAÇÃO
+============================================================ */
+(function init() {
+  // Fecha modal ao clicar fora
+  document.getElementById('modal-create-room').addEventListener('click', function(e) {
+    if (e.target === this) closeCreateModal();
+  });
+
+  // Tecla Escape fecha modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCreateModal();
+  });
+
+  // Restaura sessão se existir
+  const session = getSession();
+  if (session) {
+    APP.user = session;
+    enterLobby();
+  } else {
+    showScreen('login');
+    // Foca no campo de usuário
+    setTimeout(() => document.getElementById('login-username').focus(), 200);
+  }
+})();
+</script>
+
+</body>
+</html>
