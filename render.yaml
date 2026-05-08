@@ -1,0 +1,43 @@
+services:
+
+  # ------------------------------------------------------------------ #
+  # 1. Servidor WebSocket principal (porta atribuída pelo Render)        #
+  # ------------------------------------------------------------------ #
+  - type: web
+    name: nexuschat-ws-primary
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server/main_server.py
+    # O Render injeta PORT automaticamente — o servidor já lê essa variável
+
+  # ------------------------------------------------------------------ #
+  # 2. Servidor WebSocket de backup                                      #
+  # Monitora o principal e assume quando ele cair.                       #
+  # PRIMARY_HOST deve apontar para o hostname interno do serviço acima. #
+  # ------------------------------------------------------------------ #
+  - type: web
+    name: nexuschat-ws-backup
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python backup_server.py
+    envVars:
+      - key: PRIMARY_HOST
+        # Hostname interno do serviço principal no Render
+        value: nexuschat-ws-primary.onrender.com
+      - key: PRIMARY_PORT
+        value: 443   # Render expõe tudo na 443 (HTTPS/WSS)
+
+  # ------------------------------------------------------------------ #
+  # 3. Servidor HTTP — serve a interface web e injeta as URLs WS         #
+  # ------------------------------------------------------------------ #
+  - type: web
+    name: nexuschat-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    # gunicorn é o servidor WSGI recomendado para Flask em produção
+    startCommand: gunicorn http_server:app
+    envVars:
+      - key: WS_PRIMARY
+        value: wss://nexuschat-ws-primary.onrender.com
+      - key: WS_SECONDARY
+        value: wss://nexuschat-ws-backup.onrender.com

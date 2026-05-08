@@ -1591,8 +1591,9 @@ function updateTypingIndicator() {
  *
  * Substitua as URLs pelos endereços reais após o deploy.
  */
-const WS_PRIMARY   = 'wss://nexuschat-server.onrender.com/ws';   // servidor principal
-const WS_SECONDARY = 'wss://nexuschat-backup.onrender.com/ws';   // servidor secundário
+// URLs preenchidas dinamicamente via /api/config ao inicializar
+let WS_PRIMARY   = 'ws://localhost:8765';
+let WS_SECONDARY = 'ws://localhost:8766';
 
 function connectWebSocket(useBackup = false) {
   const url = useBackup ? WS_SECONDARY : WS_PRIMARY;
@@ -1809,7 +1810,7 @@ function showToast(msg, type = '') {
 /* ============================================================
    INICIALIZAÇÃO
 ============================================================ */
-(function init() {
+(async function init() {
   // Fecha modal ao clicar fora
   document.getElementById('modal-create-room').addEventListener('click', function(e) {
     if (e.target === this) closeCreateModal();
@@ -1820,6 +1821,20 @@ function showToast(msg, type = '') {
     if (e.key === 'Escape') closeCreateModal();
   });
 
+  // Busca as URLs dos servidores WebSocket no backend Flask (/api/config).
+  // Em produção (Render) isso retorna os endereços wss:// corretos;
+  // localmente cai nos valores padrão definidos acima.
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const cfg = await res.json();
+      WS_PRIMARY   = cfg.ws_primary;
+      WS_SECONDARY = cfg.ws_secondary;
+    }
+  } catch (_) {
+    // Sem servidor HTTP (arquivo aberto direto) — mantém os defaults localhost
+  }
+
   // Restaura sessão se existir
   const session = getSession();
   if (session) {
@@ -1827,7 +1842,6 @@ function showToast(msg, type = '') {
     enterLobby();
   } else {
     showScreen('login');
-    // Foca no campo de usuário
     setTimeout(() => document.getElementById('login-username').focus(), 200);
   }
 })();
