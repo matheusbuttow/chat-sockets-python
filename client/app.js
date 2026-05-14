@@ -408,18 +408,17 @@ function renderMembers() {
   countEl.textContent = allMembers.size;
 
   allMembers.forEach(u => {
-    const item = document.createElement('div');
-    const isMe = u === APP.user.username;
-    item.className = 'member-item' + (isMe ? ' me' : '');
+        const item = document.createElement('div');
+        const isMe = u === APP.user.username;
+        item.className = 'member-item' + (isMe ? ' me' : '');
 
-    const users = getUsers();
-    const display = users[u]?.displayName || u;
+        const display = u; // Usamos a variável 'u' direto
 
-    item.innerHTML = `
-      <div class="user-avatar">${getInitials(display)}</div>
-      <span>${escHtml(display)}${isMe ? ' <span style="color:var(--text-muted);font-size:10px">(você)</span>' : ''}</span>
-    `;
-    list.appendChild(item);
+        item.innerHTML = `
+          <div class="user-avatar">${getInitials(display)}</div>
+          <span>${escHtml(display)}${isMe ? ' <span style="color:var(--text-muted);font-size:10px">(você)</span>' : ''}</span>
+        `;
+        list.appendChild(item);
   });
 }
 

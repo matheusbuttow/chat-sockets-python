@@ -64,6 +64,9 @@ class ClientThread(threading.Thread):
                 elif msg_type == 'stop_typing':
                     self._handle_typing(data, stop=True)
 
+                elif msg_type == 'room_created':
+                    self._handle_room_created(data)
+
             except queue.Empty:
                 continue
 
@@ -72,6 +75,28 @@ class ClientThread(threading.Thread):
     # ---------------------------------------------------------- #
     # Handlers internos                                           #
     # ---------------------------------------------------------- #
+
+    def _handle_room_created(self, data):
+        # Transforma o dado de volta em texto JSON
+        mensagem_str = json.dumps(data)
+        
+        # Pede pro servidor principal disparar para todos os clientes logados
+        self.server.send_message_to_all(mensagem_str)
+        print(f"[SALA CRIADA] Sala {data['room']['name']} anunciada no servidor")
+    
+    def _handle_room_created(self, data):
+        from globals import registered_rooms, registered_rooms_lock
+        
+        nova_sala = data['room']
+        
+        # 1. O servidor anota a nova sala na memória dele
+        with registered_rooms_lock:
+            # Verifica se já não existe para evitar duplicata
+            if not any(r['id'] == nova_sala['id'] for r in registered_rooms):
+                registered_rooms.append(nova_sala)
+        
+        # 2. Avisa quem já está online agora
+        self.server.send_message_to_all(json.dumps(data))
 
     def _handle_message(self, data):
         """Processa e retransmite uma mensagem de chat para toda a sala."""
@@ -245,21 +270,28 @@ class ClientThread(threading.Thread):
         )
 
         if success:
-
             self.username = username
 
-            send_to_client(
-                self.client,
-                self.server,
-                {
-                    'type': 'login_success',
-                    'username': username,
-                    'displayName': get_display_name(username)
-                }
-            )
-
+            send_to_client(self.client, self.server, {
+                'type': 'login_success',
+                'username': username,
+                'displayName': get_display_name(username)
+            })
+            
+            # --- ADICIONAR ESTA PARTE ---
+            # Manda a lista oficial de salas para o cara que acabou de entrar
+            from globals import registered_rooms, registered_rooms_lock
+            with registered_rooms_lock:
+                lista_salas = list(registered_rooms)
+                
+            send_to_client(self.client, self.server, {
+                'type': 'room_list',
+                'rooms': lista_salas
+            })
+            # -----------------------------
+            
             print(f"[LOGIN] {username}")
-
+            
         else:
 
             send_to_client(
