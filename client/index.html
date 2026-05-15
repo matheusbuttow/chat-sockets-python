@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexusChat</title>
+  <title>Chat Cangu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -19,8 +19,8 @@
     <div class="login-card">
 
       <div class="login-header">
-        <div class="logo">Nexus<span>Chat</span></div>
-        <div class="tagline">Comunicação em tempo real</div>
+        <div class="logo">Chat<span>Cangu</span></div>
+        <div class="tagline">Fofoca em tempo real</div>
       </div>
 
       <!-- Abas Login / Registrar -->
@@ -68,9 +68,6 @@
         <button class="btn btn-primary" id="btn-register" onclick="handleRegister()">Criar conta</button>
       </div>
 
-      <div class="login-footer">
-        <span class="cursor">Sistema criptografado e seguro</span>
-      </div>
 
     </div>
   </div><!-- /screen-login -->
@@ -83,7 +80,7 @@
 
     <div class="topbar">
       <div class="topbar-left">
-        <div class="logo" style="font-size:20px">Nexus<span>Chat</span></div>
+        <div class="logo">Chat<span>Cangu</span></div>
         <div class="conn-status">
           <div class="conn-dot ok" id="lobby-conn-dot"></div>
           <span id="lobby-conn-text">Conectado</span>
@@ -232,6 +229,16 @@
 <!-- Toast container -->
 <div id="toast-container"></div>
 
+
+
+<!-- parte de debug no terminal para o cliente -->
+<div id="debug-terminal" class="hidden">
+  <div class="debug-header">
+    <span>[CHAT_OS TERMINAL] - Logs de Rede</span>
+    <button onclick="toggleDebug()">X</button>
+  </div>
+  <div id="debug-content"></div>
+</div>
 
 <!-- ============================================================
      JAVASCRIPT PRINCIPAL

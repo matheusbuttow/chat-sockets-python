@@ -1,4 +1,4 @@
-# NexusChat
+# Chat Cangu
 
 Chat em tempo real com WebSockets, múltiplos usuários e tolerância a falhas.
 
@@ -26,7 +26,7 @@ python server/main_server.py
 ### Terminal 2 — Servidor de backup (porta 8766)
 
 ```bash
-python backup_server.py
+python server/backup_server.py
 ```
 
 O servidor de backup monitora o principal a cada 5 segundos. Se o principal cair, os clientes reconectam automaticamente no backup.
@@ -39,17 +39,29 @@ python http_server.py
 
 Acesse **http://localhost:5000** no navegador.
 
-## Estrutura do projeto
 
-```
-├── server/
-│   └── main_server.py   # Servidor WebSocket principal (porta 8765)
-├── client/
-│   └── index.html       # Interface web (SPA)
-├── backup_server.py     # Servidor de backup (porta 8766)
+(Dica: pressione Ctrl + D na interface do chat para abrir o terminal oculto de debug de rede).
+
+## Estrutura do projeto
+  
 ├── http_server.py       # Servidor HTTP Flask (porta 5000)
 ├── requirements.txt
-└── README.md
+├── render.yaml          # Configuração para deploy na nuvem
+├── README.md
+├── server/
+|   ├── backup_server.py # Servidor de backup (porta 8766)
+│   ├── main_server.py   # Servidor WebSocket principal (porta 8765)
+│   ├── client_thread.py # Lógica de threads independentes por cliente
+│   ├── globals.py       # Memória compartilhada e Locks de sincronização
+│   ├── room.py          # Gerenciamento das salas do chat
+│   ├── user.py          # Autenticação e persistência
+│   ├── websocket.py     # Lógica central e eventos do WebSocket
+│   └── users.json       # Banco de dados local gerado dinamicamente
+└── client/
+    ├── index.html       # Interface web (SPA)
+    ├── style.css        # Estilos visuais
+    ├── app.js           # Lógica do frontend e concorrência (Event Loop)
+    └── fundo-cangucu.jpg # Imagem customizada de fundo
 ```
 
 ## Tolerância a falhas

@@ -5,27 +5,40 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-base:      #0a0d12;
-      --bg-panel:     #111620;
-      --bg-card:      #161d2a;
-      --bg-input:     #1a2235;
-      --bg-hover:     #1e2840;
-      --accent:       #4af0b4;
-      --accent-dim:   #1d7a5a;
-      --accent-glow:  rgba(74, 240, 180, 0.12);
-      --red:          #f06060;
-      --amber:        #f0a040;
-      --blue:         #4090f0;
-      --text-primary: #e8eef8;
-      --text-sec:     #7a8aaa;
-      --text-muted:   #3a4a60;
-      --border:       #1e2c44;
-      --border-acc:   rgba(74, 240, 180, 0.3);
-      --radius-sm:    6px;
-      --radius-md:    10px;
-      --radius-lg:    16px;
-      --font-display: 'Syne', sans-serif;
-      --font-mono:    'JetBrains Mono', monospace;
+      /* Um dark mode mais suave e agradável (tipo Discord/Spotify) */
+      --bg-base:      #121212;
+      --bg-panel:     #1e1e1e;
+      --bg-card:      #252525;
+      --bg-input:     #2d2d2d;
+      --bg-hover:     #363636;
+      
+      /* Verde Esmeralda moderno (sem ser neon) */
+      --accent:       #10b981;
+      --accent-dim:   #059669;
+      --accent-glow:  rgba(16, 185, 129, 0.15);
+      
+      /* Cores de alerta */
+      --red:          #ef4444;
+      --amber:        #f59e0b;
+      --blue:         #3b82f6;
+      
+      /* Textos */
+      --text-primary: #f3f4f6;
+      --text-sec:     #9ca3af;
+      --text-muted:   #6b7280;
+      
+      /* Bordas */
+      --border:       #374151;
+      --border-acc:   rgba(16, 185, 129, 0.4);
+      
+      /* Raios de borda um pouco mais arredondados */
+      --radius-sm:    8px;
+      --radius-md:    12px;
+      --radius-lg:    20px;
+      
+      /* Novas fontes humanas */
+      --font-display: 'Poppins', sans-serif;
+      --font-mono:    'Inter', sans-serif; /* Tiramos a fonte de terminal do texto normal */
     }
 
     html, body {
@@ -248,27 +261,34 @@
       justify-content: center;
       position: relative;
       overflow: hidden;
+      
+      /* Aqui entra a tua foto */
+      background-image: url('fundo-cangucu.jpg');
+      background-size: cover;
+      background-position: center;
     }
 
-    /* Grade decorativa de fundo */
-    #screen-login::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 40px 40px;
-      opacity: 0.35;
-      pointer-events: none;
-    }
-    /* Gradiente de vinheta */
+    /* Película escura com desfoque por cima da foto para a caixa de login destacar */
     #screen-login::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at center, transparent 30%, var(--bg-base) 80%);
+      background: rgba(18, 18, 18, 0.65); /* Escurece a foto em 65% */
+      backdrop-filter: blur(4px);         /* Dá um efeitinho embaçado de fundo */
       pointer-events: none;
+    }
+
+    /* Garante que o card de login fique por cima da película escura */
+    .login-card {
+      position: relative;
+      z-index: 10;
+      width: 420px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      animation: fadeInUp 0.4s ease;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5); /* Sombra pra destacar da foto */
     }
 
     .login-card {
@@ -848,3 +868,49 @@
     }
     .toast.success { border-color: var(--accent-dim); color: var(--accent); }
     .toast.error   { border-color: rgba(240,96,96,0.4); color: var(--red); }
+
+/* ============================================================
+   TERMINAL DE DEBUG
+============================================================ */
+#debug-terminal {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 450px;
+  height: 300px;
+  background: rgba(10, 13, 18, 0.98);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  background: var(--bg-hover);
+  color: var(--text-sec);
+  padding: 6px 12px;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+  font-weight: bold;
+}
+.debug-header button {
+  background: none; border: none; color: var(--red); cursor: pointer; font-weight: bold;
+}
+#debug-content {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* Cores para cada tipo de log */
+.dbg-out { color: #4af0b4; } /* Mensagens enviadas (Verde) */
+.dbg-in  { color: #4090f0; } /* Mensagens recebidas (Azul) */
+.dbg-sys { color: #f0a040; } /* Avisos do sistema (Amarelo) */
+.dbg-err { color: #f06060; } /* Erros (Vermelho) */

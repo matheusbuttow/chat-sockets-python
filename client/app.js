@@ -41,16 +41,16 @@ const DEFAULT_ROOMS = [
 ];
 
 function loadRooms() {
-  const stored = localStorage.getItem('nx_rooms');
+  const stored = localStorage.getItem('cangu_rooms');
   if (stored) {
     APP.rooms = JSON.parse(stored);
   } else {
     APP.rooms = [...DEFAULT_ROOMS];
-    localStorage.setItem('nx_rooms', JSON.stringify(APP.rooms));
+    localStorage.setItem('cangu_rooms', JSON.stringify(APP.rooms));
   }
 }
 function saveRooms() {
-  localStorage.setItem('nx_rooms', JSON.stringify(APP.rooms));
+  localStorage.setItem('cangu_rooms', JSON.stringify(APP.rooms));
 }
 
 /* ============================================================
@@ -125,7 +125,6 @@ function handleLogout() {
     APP.ws = null;
   }
   APP.user = null;
-  clearSession();
   showScreen('login');
 }
 
@@ -472,6 +471,9 @@ function connectWebSocket(useBackup = false) {
     APP.connected = true;
     APP.reconnectAttempts = 0;
     setConnectionStatus('ok');
+    
+    // --- ESPIÃO DE CONEXÃO AQUI ---
+    debugLog(`CONECTADO AO SERVIDOR (${url})`, 'sys');
 
     // Re-entra na sala se estava em uma
     if (APP.currentRoom) {
@@ -483,6 +485,9 @@ function connectWebSocket(useBackup = false) {
   };
 
   APP.ws.onmessage = (event) => {
+    // --- ESPIÃO DE RECEBIMENTO AQUI ---
+    debugLog(`⬇ RECEBEU: ${event.data}`, 'in');
+    
     try {
       const data = JSON.parse(event.data);
       handleServerMessage(data);
@@ -494,6 +499,9 @@ function connectWebSocket(useBackup = false) {
   APP.ws.onclose = () => {
     APP.connected = false;
     setConnectionStatus('warning');
+    
+    // --- ESPIÃO DE QUEDA AQUI ---
+    debugLog(`⚠ CONEXÃO PERDIDA. Tentando reconectar...`, 'err');
 
     // Tenta reconectar com backoff exponencial
     const delay = Math.min(1000 * Math.pow(2, APP.reconnectAttempts), 30000);
@@ -511,6 +519,7 @@ function connectWebSocket(useBackup = false) {
     setConnectionStatus('error');
   };
 }
+
 
 /**
  * Trata mensagens recebidas do servidor.
@@ -621,6 +630,14 @@ function handleServerMessage(data) {
             data.message
         );
         break;
+        
+    case 'room_members':
+      // Recebe a lista de quem já estava na sala quando a gente entrou
+      if (data.roomId === APP.currentRoom?.id) {
+        APP.members[data.roomId] = new Set(data.members);
+        renderMembers();
+      }
+      break;
 
     default:
       console.log('[WS] Evento desconhecido:', data.type);
@@ -630,7 +647,14 @@ function handleServerMessage(data) {
 /** Envia um objeto JSON pelo WebSocket (se conectado) */
 function wsSend(obj) {
   if (APP.ws && APP.ws.readyState === WebSocket.OPEN) {
-    APP.ws.send(JSON.stringify(obj));
+    const jsonStr = JSON.stringify(obj);
+    
+    // --- ESPIÃO DE ENVIO AQUI ---
+    debugLog(`⬆ ENVIOU: ${jsonStr}`, 'out');
+    
+    APP.ws.send(jsonStr);
+  } else {
+    debugLog(`ERRO: Tentou enviar mas WS está fechado.`, 'err');
   }
 }
 
@@ -652,6 +676,36 @@ function setConnectionStatus(state) {
 /* ============================================================
    UTILITÁRIOS
 ============================================================ */
+
+/* ============================================================
+   TERMINAL DE DEBUG
+============================================================ */
+function toggleDebug() {
+  document.getElementById('debug-terminal').classList.toggle('hidden');
+}
+
+// Atalho Ctrl + D para abrir/fechar o terminal
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'd') {
+    e.preventDefault();
+    toggleDebug();
+  }
+});
+
+function debugLog(msg, type = 'sys') {
+  const content = document.getElementById('debug-content');
+  if (!content) return;
+  const line = document.createElement('div');
+  line.className = 'dbg-' + type;
+  
+  // Pega a hora atual pra ficar bonito
+  const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+  line.textContent = `[${time}] ${msg}`;
+  
+  content.appendChild(line);
+  content.scrollTop = content.scrollHeight; // Rola pra baixo sozinho
+}
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g,'&amp;')

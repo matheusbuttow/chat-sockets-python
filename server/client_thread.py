@@ -67,6 +67,12 @@ class ClientThread(threading.Thread):
                 elif msg_type == 'room_created':
                     self._handle_room_created(data)
 
+                elif msg_type == 'auth':
+                    self.username = data.get('username')
+                    from user import register_username
+                    # Registra o cara de volta na memória do servidor
+                    register_username(self.username, self.client['id'])
+
             except queue.Empty:
                 continue
 
@@ -192,6 +198,29 @@ class ClientThread(threading.Thread):
                 'roomId': room
             })
         )
+
+        # --------------------------------------------------------
+        # --- NOVO CÓDIGO AQUI: ENVIA A LISTA PRO NOVATO ---
+        # --------------------------------------------------------
+        # Descobre quem já está na sala para avisar o novato
+        membros_nomes = []
+        with rooms_lock:
+            # Pega os IDs de quem está na sala
+            membros_ids = list(rooms.get(room, []))
+            
+        with username_lock:
+            # Transforma os IDs em Nomes de Usuário
+            for cid in membros_ids:
+                nome = next((u for u, c in usernames.items() if c == cid), None)
+                if nome:
+                    membros_nomes.append(nome)
+                    
+        # Manda a lista só pra quem acabou de entrar
+        send_to_client(self.client, self.server, {
+            'type': 'room_members',
+            'roomId': room,
+            'members': membros_nomes
+        })
 
     def _handle_leave(self, data):
         """Remove o usuário da sala e notifica os membros restantes."""
