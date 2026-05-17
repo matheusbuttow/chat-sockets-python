@@ -10,7 +10,7 @@ PRIMARY_HOST = os.environ.get('PRIMARY_HOST', 'localhost')
 PRIMARY_PORT = int(os.environ.get('PRIMARY_PORT', 8765))
 BACKUP_PORT = int(os.environ.get('PORT', 8766))
 
-def is_primary_alive():
+def is_primary_alive(): #ping para ver se o principal caiu!
     try:
         with socket.create_connection((PRIMARY_HOST, PRIMARY_PORT), timeout=2):
             return True

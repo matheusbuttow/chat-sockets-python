@@ -1,5 +1,5 @@
 """
-Servidor HTTP — NexusChat
+Servidor HTTP — Chat Cangu
 Serve a interface web (client/index.html) e expõe um endpoint de configuração
 que informa ao frontend as URLs dos servidores WebSocket.
 

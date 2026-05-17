@@ -27,17 +27,13 @@ const APP = {
   rooms: [],
 };
 
-
-
 /* ============================================================
    SALAS PADRÃO
 ============================================================ */
 const DEFAULT_ROOMS = [
   { id: 'geral',      name: 'Geral',      icon: '💬', desc: 'Conversa geral para todos os membros', members: 0 },
   { id: 'tech',       name: 'Tech Talk',  icon: '💻', desc: 'Desenvolvimento, código e tecnologia',  members: 0 },
-  { id: 'random',     name: 'Aleatório',  icon: '🎲', desc: 'Tópicos variados e off-topic',         members: 0 },
   { id: 'projetos',   name: 'Projetos',   icon: '🚀', desc: 'Discussão de projetos e tarefas',      members: 0 },
-  { id: 'anuncios',   name: 'Anúncios',   icon: '📢', desc: 'Comunicados e novidades importantes',  members: 0 },
 ];
 
 function loadRooms() {
