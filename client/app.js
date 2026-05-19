@@ -9,7 +9,7 @@ const APP = {
   currentRoom: null,       // { id, name, icon, desc }
 
   // Conexão WebSocket
-  ws: null,
+  worker: null,
   connected: false,
   reconnectTimer: null,
   reconnectAttempts: 0,
@@ -116,11 +116,13 @@ function handleRegister() {
 }
 
 function handleLogout() {
-  if (APP.ws) {
-    APP.ws.close();
-    APP.ws = null;
+  if (APP.worker) {
+    APP.worker.postMessage({ action: 'close' });
+    APP.worker.terminate(); // Mata a thread
+    APP.worker = null;
   }
   APP.user = null;
+  APP.connected = false;
   showScreen('login');
 }
 
@@ -455,64 +457,66 @@ let WS_SECONDARY = 'ws://localhost:8766';
 function connectWebSocket(useBackup = false) {
   const url = useBackup ? WS_SECONDARY : WS_PRIMARY;
 
-  try {
-    APP.ws = new WebSocket(url);
-  } catch(e) {
-    // WebSocket não disponível — modo offline
-    setConnectionStatus('error');
-    return;
-  }
+  // 1. CÓDIGO DA THREAD (Embutido no JS pra não dar erro de arquivo)
+  const workerCode = `
+    let ws = null;
+    self.onmessage = function(e) {
+        const msg = e.data;
+        if (msg.action === 'connect') {
+            ws = new WebSocket(msg.url);
+            ws.onopen = () => self.postMessage({ type: '_sys_', status: 'connected' });
+            ws.onclose = () => self.postMessage({ type: '_sys_', status: 'disconnected' });
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    self.postMessage(data); 
+                } catch (err) {}
+            };
+        }
+        if (msg.action === 'send' && ws) { ws.send(JSON.stringify(msg.payload)); }
+        if (msg.action === 'close' && ws) { ws.close(); }
+    };
+  `;
 
-  APP.ws.onopen = () => {
-    APP.connected = true;
-    APP.reconnectAttempts = 0;
-    setConnectionStatus('ok');
-    
-    // --- ESPIÃO DE CONEXÃO AQUI ---
-    debugLog(`CONECTADO AO SERVIDOR (${url})`, 'sys');
+  // 2. CRIA O ARQUIVO VIRTUAL E A THREAD
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  APP.worker = new Worker(URL.createObjectURL(blob));
 
-    // Re-entra na sala se estava em uma
-    if (APP.currentRoom) {
-      wsSend({ type: 'join_room', roomId: APP.currentRoom.id, username: APP.user.username });
-    }
-    if (APP.user) {
-      wsSend({ type: 'auth', username: APP.user.username });
-    }
-  };
+  // 3. MANDA CONECTAR
+  APP.worker.postMessage({ action: 'connect', url: url });
 
-  APP.ws.onmessage = (event) => {
-    // --- ESPIÃO DE RECEBIMENTO AQUI ---
-    debugLog(`⬇ RECEBEU: ${event.data}`, 'in');
-    
-    try {
-      const data = JSON.parse(event.data);
+  // 4. LIDA COM O QUE A THREAD RECEBE
+  APP.worker.onmessage = function(e) {
+      const data = e.data;
+
+      if (data.type === '_sys_') {
+          if (data.status === 'connected') {
+              APP.connected = true;
+              APP.reconnectAttempts = 0;
+              setConnectionStatus('ok');
+              debugLog(`CONECTADO AO SERVIDOR (${url})`, 'sys');
+              
+              if (APP.currentRoom) { wsSend({ type: 'join_room', roomId: APP.currentRoom.id, username: APP.user.username }); }
+              if (APP.user) { wsSend({ type: 'auth', username: APP.user.username }); }
+          } else if (data.status === 'disconnected') {
+              APP.connected = false;
+              setConnectionStatus('warning');
+              debugLog(`⚠ CONEXÃO PERDIDA. Tentando reconectar...`, 'err');
+              
+              const delay = Math.min(1000 * Math.pow(2, APP.reconnectAttempts), 30000);
+              APP.reconnectAttempts++;
+              APP.reconnectTimer = setTimeout(() => {
+                const tryBackup = APP.reconnectAttempts >= 3;
+                if (tryBackup) showToast('Tentando servidor de backup...', 'error');
+                connectWebSocket(tryBackup);
+              }, delay);
+          }
+          return;
+      }
+
+      // Se for mensagem do servidor, joga pro debug e pro roteador
+      debugLog(`⬇ RECEBEU: ${JSON.stringify(data)}`, 'in');
       handleServerMessage(data);
-    } catch(e) {
-      console.error('[WS] Mensagem inválida:', event.data);
-    }
-  };
-
-  APP.ws.onclose = () => {
-    APP.connected = false;
-    setConnectionStatus('warning');
-    
-    // --- ESPIÃO DE QUEDA AQUI ---
-    debugLog(`⚠ CONEXÃO PERDIDA. Tentando reconectar...`, 'err');
-
-    // Tenta reconectar com backoff exponencial
-    const delay = Math.min(1000 * Math.pow(2, APP.reconnectAttempts), 30000);
-    APP.reconnectAttempts++;
-
-    APP.reconnectTimer = setTimeout(() => {
-      // Após 3 falhas, tenta servidor secundário
-      const tryBackup = APP.reconnectAttempts >= 3;
-      if (tryBackup) showToast('Tentando servidor de backup...', 'error');
-      connectWebSocket(tryBackup);
-    }, delay);
-  };
-
-  APP.ws.onerror = () => {
-    setConnectionStatus('error');
   };
 }
 
@@ -642,15 +646,12 @@ function handleServerMessage(data) {
 
 /** Envia um objeto JSON pelo WebSocket (se conectado) */
 function wsSend(obj) {
-  if (APP.ws && APP.ws.readyState === WebSocket.OPEN) {
-    const jsonStr = JSON.stringify(obj);
-    
-    // --- ESPIÃO DE ENVIO AQUI ---
-    debugLog(`⬆ ENVIOU: ${jsonStr}`, 'out');
-    
-    APP.ws.send(jsonStr);
+  if (APP.worker && APP.connected) {
+    APP.worker.postMessage({ action: 'send', payload: obj });
+    debugLog(`⬆ ENVIOU: ${JSON.stringify(obj)}`, 'out');
   } else {
-    debugLog(`ERRO: Tentou enviar mas WS está fechado.`, 'err');
+    debugLog(`ERRO: Tentou enviar mas a Thread está desconectada.`, 'err');
+    showError(document.getElementById('login-error'), 'Sem conexão com o servidor Python!');
   }
 }
 
